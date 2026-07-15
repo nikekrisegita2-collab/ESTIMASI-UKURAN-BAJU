@@ -56,7 +56,7 @@ function simpanBacaanSensor({ device_id, height, chest, waist, shoulder }) {
 // Atur lewat environment variable, misal di file .env atau saat menjalankan:
 //   MQTT_BROKER_URL=mqtt://alamat-broker:1883
 //   MQTT_TOPIC=sensor/ukuran-baju
-const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'gerbil.rmq.cloudamqp.com';
+const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://gerbil.rmq.cloudamqp.com';
 const MQTT_TOPIC = process.env.MQTT_TOPIC || 'sensor/ukuran-baju';
 const MQTT_USERNAME = process.env.MQTT_USERNAME || 'wxpvavbg:wxpvavbg';
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || 'P_-kUISpxl-uBkWCzIRCvQYrYOAOY6z3';
