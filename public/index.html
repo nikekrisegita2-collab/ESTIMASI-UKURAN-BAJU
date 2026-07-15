@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html class="dark" lang="id">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>FitViz - Data &amp; Kustomisasi</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "surface-dim": "#0b1326",
+                    "surface-container": "#171f33",
+                    "on-primary": "#00363e",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#ffb957",
+                    "on-surface": "#dae2fd",
+                    "surface-container-high": "#222a3d",
+                    "error-container": "#93000a",
+                    "surface-variant": "#2d3449",
+                    "secondary-fixed-dim": "#b9c8de",
+                    "on-secondary": "#233143",
+                    "on-tertiary-fixed-variant": "#643f00",
+                    "surface-container-lowest": "#060e20",
+                    "primary-fixed-dim": "#2fd9f4",
+                    "inverse-primary": "#006877",
+                    "primary-fixed": "#a2eeff",
+                    "outline": "#859397",
+                    "error": "#ffb4ab",
+                    "on-tertiary": "#462b00",
+                    "surface-tint": "#2fd9f4",
+                    "on-background": "#dae2fd",
+                    "tertiary": "#ffd6a3",
+                    "outline-variant": "#3c494c",
+                    "secondary-container": "#39485a",
+                    "background": "#0b1326",
+                    "on-secondary-fixed-variant": "#39485a",
+                    "on-secondary-container": "#a7b6cc",
+                    "surface": "#0b1326",
+                    "surface-container-low": "#131b2e",
+                    "on-tertiary-container": "#6e4600",
+                    "on-error": "#690005",
+                    "secondary-fixed": "#d4e4fa",
+                    "primary": "#8aebff",
+                    "tertiary-fixed": "#ffddb5",
+                    "on-primary-fixed-variant": "#004e5a",
+                    "on-surface-variant": "#bbc9cd",
+                    "inverse-on-surface": "#283044",
+                    "inverse-surface": "#dae2fd",
+                    "surface-container-highest": "#2d3449",
+                    "on-tertiary-fixed": "#2a1800",
+                    "surface-bright": "#31394d",
+                    "on-primary-container": "#005763",
+                    "primary-container": "#22d3ee",
+                    "on-primary-fixed": "#001f25",
+                    "secondary": "#b9c8de",
+                    "tertiary-container": "#ffb13b",
+                    "on-secondary-fixed": "#0d1c2d",
+                    "success": "#4ade80"
+                },
+                "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                "spacing": {
+                    "section-gap": "2rem", "touch-target": "2.75rem",
+                    "container-max-width": "480px", "stack-gap": "1rem", "edge-margin": "1.25rem"
+                },
+                "fontFamily": {
+                    "headline-md": ["Inter"], "headline-lg": ["Inter"], "display": ["Inter"],
+                    "data-point": ["JetBrains Mono"], "body-lg": ["Inter"], "body-md": ["Inter"],
+                    "label-caps": ["JetBrains Mono"]
+                },
+                "fontSize": {
+                    "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                    "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                    "display": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "data-point": ["14px", { "lineHeight": "18px", "fontWeight": "600" }],
+                    "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                    "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                    "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                }
+            }
+        }
+    }
+</script>
+<style>
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .view { display: none; }
+    .view.active { display: block; }
+    .nav-item.active { background-color: theme('colors.primary-container'); color: theme('colors.on-primary-container'); box-shadow: 0 0 12px rgba(34,211,238,0.3); }
+    .segbtn.active { background-color: theme('colors.primary-container'); color: #0f172a; box-shadow: 0 0 12px rgba(34,211,238,0.3); }
+    @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    #toast { animation: toast-in 0.2s ease-out; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .grid-bg {
+        background-size: 20px 20px;
+        background-image:
+            linear-gradient(to right, rgba(133, 147, 151, 0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(133, 147, 151, 0.1) 1px, transparent 1px);
+    }
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+
+<!-- TopAppBar -->
+<header class="bg-surface-dim border-b border-outline-variant flex items-center px-edge-margin h-touch-target w-full max-w-container-max-width mx-auto sticky top-0 z-40 justify-center">
+  <div class="flex items-center gap-3">
+    <h1 class="font-headline-lg text-headline-lg font-bold text-primary tracking-tight">FitViz</h1>
+  </div>
+</header>
+
+<!-- Main Content Container -->
+<main class="w-full max-w-container-max-width mx-auto pb-40">
+
+  <!-- ============ VIEW: KUSTOMISASI ============ -->
+  <div id="view-kustomisasi" class="view active">
+    <div class="px-edge-margin py-section-gap flex flex-col gap-section-gap">
+
+      <!-- Data Sensor Terbaru Card -->
+      <section class="bg-[#1e293b] rounded-xl p-4 border border-[#334155]">
+        <div class="flex items-center justify-between border-b border-[#334155] pb-2 mb-4">
+          <h2 class="font-headline-md text-headline-md text-on-surface">Data Sensor Terbaru (cm)</h2>
+          <button id="refresh-sensor" title="Muat ulang data sensor" class="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-variant transition-colors">
+            <span class="material-symbols-outlined text-lg" id="refresh-icon">refresh</span>
+          </button>
+        </div>
+        <div class="flex items-center justify-between bg-surface-variant/40 rounded-lg px-3 py-2 mb-4 border border-[#334155]">
+          <span class="font-label-caps text-label-caps text-on-surface-variant">Estimasi ukuran</span>
+          <span id="sensor-size-badge" class="font-headline-md text-headline-md text-primary" data-sensor="size">--</span>
+        </div>
+        <div class="grid grid-cols-2 gap-4" id="sensor-grid">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">straighten</span>
+            </div>
+            <div>
+              <p class="font-label-caps text-label-caps text-on-surface-variant">Tinggi</p>
+              <p class="font-data-point text-data-point text-on-surface" data-sensor="height">--</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">monitor_heart</span>
+            </div>
+            <div>
+              <p class="font-label-caps text-label-caps text-on-surface-variant">Dada</p>
+              <p class="font-data-point text-data-point text-on-surface" data-sensor="chest">--</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">accessibility_new</span>
+            </div>
+            <div>
+              <p class="font-label-caps text-label-caps text-on-surface-variant">Pinggang</p>
+              <p class="font-data-point text-data-point text-on-surface" data-sensor="waist">--</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-sm">fitness_center</span>
+            </div>
+            <div>
+              <p class="font-label-caps text-label-caps text-on-surface-variant">Bahu</p>
+              <p class="font-data-point text-data-point text-on-surface" data-sensor="shoulder">--</p>
+            </div>
+          </div>
+        </div>
+        <p class="text-[11px] text-on-surface-variant/70 mt-3" id="sensor-updated">Belum ada data</p>
+      </section>
+
+      <!-- Kustomisasi Kemeja Card -->
+      <section class="bg-[#1e293b] rounded-xl p-4 border border-[#334155] shadow-[0_0_12px_rgba(34,211,238,0.1)]">
+        <h2 class="font-headline-md text-headline-md text-on-surface mb-4 border-b border-[#334155] pb-2">Kustomisasi Kemeja</h2>
+        <div class="flex flex-col gap-6">
+
+          <!-- Tipe Fit -->
+          <div>
+            <p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Tipe Fit</p>
+            <div class="flex bg-surface-variant rounded-full p-1 border border-[#334155]" data-group="fit_type">
+              <button data-value="Slim Fit" class="segbtn active flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point transition-all">Slim Fit</button>
+              <button data-value="Regular Fit" class="segbtn flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point hover:text-on-surface transition-all">Regular Fit</button>
+            </div>
+          </div>
+
+          <!-- Lengan -->
+          <div>
+            <p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Lengan</p>
+            <div class="flex bg-surface-variant rounded-full p-1 border border-[#334155]" data-group="sleeve">
+              <button data-value="Pendek" class="segbtn flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point hover:text-on-surface transition-all">Pendek</button>
+              <button data-value="Panjang" class="segbtn active flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point transition-all">Panjang</button>
+            </div>
+          </div>
+
+          <!-- Saku -->
+          <div>
+            <p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Saku</p>
+            <div class="flex bg-surface-variant rounded-full p-1 border border-[#334155]" data-group="pocket">
+              <button data-value="Tanpa Saku" class="segbtn active flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point transition-all">Tanpa Saku</button>
+              <button data-value="Satu Saku" class="segbtn flex-1 py-2 px-4 rounded-full text-on-surface-variant font-data-point text-data-point hover:text-on-surface transition-all">Satu Saku</button>
+            </div>
+          </div>
+
+          <!-- Kerah -->
+          <div>
+            <p class="font-label-caps text-label-caps text-on-surface-variant mb-2">Kerah</p>
+            <div class="relative">
+              <select id="collar-select" class="w-full bg-[#0f172a] border border-[#334155] rounded-xl py-3 px-4 text-on-surface font-body-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary appearance-none cursor-pointer">
+                <option>Classic Point</option>
+                <option>Button-Down</option>
+                <option>Spread</option>
+                <option>Mandarin</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ============ VIEW: FITTING ============ -->
+  <div id="view-fitting" class="view">
+
+    <!-- Sub-view: Daftar pesanan -->
+    <div id="fitting-list-subview">
+      <div class="px-edge-margin py-section-gap flex flex-col gap-stack-gap">
+        <div class="flex items-center justify-between">
+          <h2 class="font-headline-lg text-headline-lg text-on-surface">Daftar Fitting</h2>
+          <button id="refresh-profiles" class="w-8 h-8 rounded-full flex items-center justify-center text-primary hover:bg-surface-variant transition-colors">
+            <span class="material-symbols-outlined text-lg">refresh</span>
+          </button>
+        </div>
+        <p class="text-[12px] text-on-surface-variant -mt-2">Ketuk salah satu pesanan untuk melihat sketsa 2D-nya.</p>
+        <div id="profiles-list" class="flex flex-col gap-3">
+          <!-- profile cards injected by JS -->
+        </div>
+        <p id="profiles-empty" class="hidden text-center text-on-surface-variant py-10 font-body-md">
+          Belum ada data pesanan tersimpan.<br>Simpan dari halaman Kustomisasi terlebih dahulu.
+        </p>
+      </div>
+    </div>
+
+    <!-- Sub-view: Sketsa & Virtual Fitting 2D -->
+    <div id="fitting-sketch-subview" class="hidden">
+      <div class="relative h-[calc(100vh-8rem)] flex flex-col pt-4">
+        <div class="flex items-center justify-between px-edge-margin mb-4 gap-2">
+          <button id="sketch-back" class="p-2 -ml-2 rounded-full hover:bg-surface-variant transition-colors text-on-surface">
+            <span class="material-symbols-outlined">arrow_back</span>
+          </button>
+          <h1 id="sketch-title" class="font-headline-md text-headline-md text-on-surface truncate flex-1 text-center">Sketsa</h1>
+          <div class="w-9"></div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="absolute right-edge-margin top-20 flex flex-col gap-2 z-10">
+          <button id="zoom-in" class="p-2 bg-surface-container-high rounded-full border border-outline-variant shadow-lg hover:border-primary transition-colors group">
+            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[20px]">zoom_in</span>
+          </button>
+          <button id="zoom-out" class="p-2 bg-surface-container-high rounded-full border border-outline-variant shadow-lg hover:border-primary transition-colors group">
+            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[20px]">zoom_out</span>
+          </button>
+          <button id="sketch-download" class="p-2 bg-surface-container-high rounded-full border border-outline-variant shadow-lg hover:border-primary transition-colors mt-2 group">
+            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[20px]">download</span>
+          </button>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="flex-grow mx-edge-margin bg-surface-container rounded-xl border border-outline-variant relative overflow-hidden grid-bg shadow-[inset_0_0_40px_rgba(0,0,0,0.5)]">
+          <div class="absolute inset-0 flex items-center justify-center overflow-hidden">
+            <div id="sketch-svg-wrap" style="transition: transform 0.15s ease-out;"></div>
+          </div>
+          <!-- Targeting Lines (HUD) -->
+          <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-[30%] left-0 w-full h-[1px] bg-primary/20 border-t border-dashed border-primary/50"></div>
+            <div class="absolute top-[45%] left-0 w-full h-[1px] bg-primary/20 border-t border-dashed border-primary/50"></div>
+            <div class="absolute top-0 left-[50%] w-[1px] h-full bg-primary/20 border-l border-dashed border-primary/50"></div>
+            <div class="absolute top-4 left-4 w-4 h-4 border-t-2 border-l-2 border-primary"></div>
+            <div class="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-primary"></div>
+            <div class="absolute bottom-4 left-4 w-4 h-4 border-b-2 border-l-2 border-primary"></div>
+            <div class="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-primary"></div>
+          </div>
+        </div>
+
+        <div class="px-edge-margin pt-4 pb-2">
+          <button id="save-desain-btn" class="w-full h-touch-target bg-primary-container text-on-primary-container font-headline-md text-headline-md rounded-xl shadow-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 active:scale-95">
+            <span class="material-symbols-outlined">save</span>
+            <span>Simpan Desain</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- Sticky Bottom Actions (only visible on Kustomisasi view) -->
+<div id="bottom-actions" class="fixed bottom-16 left-0 right-0 w-full max-w-container-max-width mx-auto bg-surface-dim/90 backdrop-blur-md border-t border-outline-variant p-4 z-40 flex flex-col gap-3">
+  <div class="relative w-full">
+    <input id="order-name" type="text" placeholder="Nama Pesanan / Profil" class="w-full bg-[#0f172a] border border-primary rounded-full py-3 px-6 text-on-surface font-body-lg focus:outline-none focus:ring-2 focus:ring-primary/50 placeholder:text-on-surface-variant/50 shadow-[0_0_12px_rgba(34,211,238,0.1)]">
+    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-primary">person</span>
+  </div>
+  <button id="save-btn" class="w-full bg-transparent border border-outline-variant text-on-surface font-headline-md text-headline-md py-3 rounded-full flex items-center justify-center gap-2 active:scale-95 transition-transform hover:bg-surface-variant">
+    <span>Simpan Data</span>
+    <span class="material-symbols-outlined text-lg">check_circle</span>
+  </button>
+</div>
+
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 right-0 w-full max-w-container-max-width mx-auto flex justify-around items-center h-16 px-4 bg-surface-container border-t border-outline-variant z-50 rounded-t-xl shadow-lg">
+  <button data-view="view-kustomisasi" class="nav-item active flex flex-col items-center justify-center rounded-full px-6 py-1 scale-95 duration-150 text-on-surface-variant">
+    <span class="material-symbols-outlined text-2xl mb-1">straighten</span>
+    <span class="font-label-caps text-label-caps">Kustomisasi</span>
+  </button>
+  <button data-view="view-fitting" class="nav-item flex flex-col items-center justify-center rounded-full px-6 py-1 text-on-surface-variant hover:text-primary transition-all scale-95 duration-150">
+    <span class="material-symbols-outlined text-2xl mb-1">accessibility_new</span>
+    <span class="font-label-caps text-label-caps">Fitting</span>
+  </button>
+</nav>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-40 left-1/2 -translate-x-1/2 z-50 bg-surface-container-high border border-outline-variant text-on-surface px-5 py-3 rounded-full font-body-md shadow-lg whitespace-nowrap"></div>
+
+<script>
+const API_BASE = ''; // same origin
+
+// ---------------- State ----------------
+const state = {
+  fit_type: 'Slim Fit',
+  sleeve: 'Panjang',
+  pocket: 'Tanpa Saku',
+  collar: 'Classic Point',
+  sensor: { height: null, chest: null, waist: null, shoulder: null },
+};
+
+// ---------------- Toast ----------------
+let toastTimer = null;
+function showToast(message, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.classList.remove('hidden');
+  el.classList.toggle('border-error', isError);
+  el.classList.toggle('text-error', isError);
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+
+// ---------------- Tab / Nav switching ----------------
+const navItems = document.querySelectorAll('.nav-item');
+const views = document.querySelectorAll('.view');
+const bottomActions = document.getElementById('bottom-actions');
+
+navItems.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.view;
+    navItems.forEach(b => b.classList.toggle('active', b === btn));
+    views.forEach(v => v.classList.toggle('active', v.id === target));
+    bottomActions.style.display = target === 'view-kustomisasi' ? 'flex' : 'none';
+    if (target === 'view-fitting') {
+      showFittingSubview('list');
+      loadProfiles();
+    }
+  });
+});
+
+function showFittingSubview(name) {
+  document.getElementById('fitting-list-subview').classList.toggle('hidden', name !== 'list');
+  document.getElementById('fitting-sketch-subview').classList.toggle('hidden', name !== 'sketch');
+}
+
+// ---------------- Segmented buttons (Tipe Fit / Lengan / Saku) ----------------
+document.querySelectorAll('[data-group]').forEach(group => {
+  const key = group.dataset.group;
+  group.querySelectorAll('.segbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      group.querySelectorAll('.segbtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state[key] = btn.dataset.value;
+    });
+  });
+});
+
+// ---------------- Kerah select ----------------
+const collarSelect = document.getElementById('collar-select');
+collarSelect.addEventListener('change', () => { state.collar = collarSelect.value; });
+
+// ---------------- Sensor data ----------------
+async function loadSensor() {
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('spin');
+  try {
+    const res = await fetch(`${API_BASE}/api/sensor/latest`);
+    if (!res.ok) throw new Error('no-data');
+    const data = await res.json();
+    updateSensorUI(data);
+  } catch (e) {
+    document.getElementById('sensor-updated').textContent = 'Belum ada data dari alat sensor.';
+  } finally {
+    icon.classList.remove('spin');
+  }
+}
+
+function updateSensorUI(data) {
+  state.sensor = { height: data.height, chest: data.chest, waist: data.waist, shoulder: data.shoulder, size: data.size };
+  document.querySelector('[data-sensor="height"]').textContent = data.height ?? '--';
+  document.querySelector('[data-sensor="chest"]').textContent = data.chest ?? '--';
+  document.querySelector('[data-sensor="waist"]').textContent = data.waist ?? '--';
+  document.querySelector('[data-sensor="shoulder"]').textContent = data.shoulder ?? '--';
+  document.querySelector('[data-sensor="size"]').textContent = data.size ?? '--';
+  
+  const icon = document.getElementById('refresh-icon');
+  // Animasi sebentar untuk menandakan update otomatis
+  icon.classList.add('spin');
+  setTimeout(() => icon.classList.remove('spin'), 500);
+
+  const t = new Date(data.created_at + 'Z');
+  const catatan = data.size_note ? ` • ${data.size_note}` : '';
+  document.getElementById('sensor-updated').textContent =
+    `Perangkat: ${data.device_id} • Diperbarui ${t.toLocaleString('id-ID')}${catatan}`;
+}
+
+// Subscribe ke Real-time Data (SSE)
+const sensorStream = new EventSource(`${API_BASE}/api/sensor/stream`);
+sensorStream.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  updateSensorUI(data);
+};
+
+document.getElementById('refresh-sensor').addEventListener('click', loadSensor);
+
+// ---------------- Save profile ----------------
+document.getElementById('save-btn').addEventListener('click', async () => {
+  const nameInput = document.getElementById('order-name');
+  const name = nameInput.value.trim();
+  if (!name) {
+    showToast('Isi nama pesanan/profil dulu ya', true);
+    nameInput.focus();
+    return;
+  }
+
+  const payload = {
+    name,
+    fit_type: state.fit_type,
+    sleeve: state.sleeve,
+    pocket: state.pocket,
+    collar: state.collar,
+    height: state.sensor.height,
+    chest: state.sensor.chest,
+    waist: state.sensor.waist,
+    shoulder: state.sensor.shoulder,
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Gagal menyimpan');
+    }
+    showToast('Data berhasil disimpan');
+    nameInput.value = '';
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+// ---------------- Fitting list ----------------
+let profilesCache = [];
+
+function statusBadgeClasses(status) {
+  if (status === 'Sudah Fitting') return 'bg-success/15 text-success border-success/30';
+  return 'bg-tertiary-container/15 text-tertiary-container border-tertiary-container/30';
+}
+
+function renderProfiles(list) {
+  profilesCache = list;
+  const container = document.getElementById('profiles-list');
+  const empty = document.getElementById('profiles-empty');
+  container.innerHTML = '';
+
+  if (!list.length) {
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  list.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'bg-[#1e293b] rounded-xl p-4 border border-[#334155] flex flex-col gap-3';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2 cursor-pointer" data-action="open-sketch" data-id="${p.id}">
+        <div>
+          <p class="font-headline-md text-headline-md text-on-surface">${escapeHtml(p.name)}</p>
+          <p class="font-label-caps text-label-caps text-on-surface-variant mt-1">${p.fit_type} • Lengan ${p.sleeve} • ${p.pocket} • ${p.collar}</p>
+        </div>
+        <span class="text-[10px] px-2 py-1 rounded-full border font-label-caps text-label-caps ${statusBadgeClasses(p.status)}">${p.status}</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-center border-t border-[#334155] pt-3">
+        <div><p class="font-label-caps text-label-caps text-on-surface-variant">Tinggi</p><p class="font-data-point text-data-point text-on-surface">${p.height ?? '--'}</p></div>
+        <div><p class="font-label-caps text-label-caps text-on-surface-variant">Dada</p><p class="font-data-point text-data-point text-on-surface">${p.chest ?? '--'}</p></div>
+        <div><p class="font-label-caps text-label-caps text-on-surface-variant">Pinggang</p><p class="font-data-point text-data-point text-on-surface">${p.waist ?? '--'}</p></div>
+        <div><p class="font-label-caps text-label-caps text-on-surface-variant">Bahu</p><p class="font-data-point text-data-point text-on-surface">${p.shoulder ?? '--'}</p></div>
+      </div>
+      <div class="flex gap-2">
+        <button data-action="open-sketch" data-id="${p.id}" class="flex-1 text-data-point text-data-point font-data-point py-2 rounded-full bg-primary-container text-[#0f172a] flex items-center justify-center gap-1 hover:bg-primary transition-colors">
+          <span class="material-symbols-outlined text-base">model_training</span> Lihat Sketsa
+        </button>
+        <button data-action="toggle-status" data-id="${p.id}" data-status="${p.status}" class="flex-1 text-data-point text-data-point font-data-point py-2 rounded-full border border-outline-variant text-on-surface hover:bg-surface-variant transition-colors">
+          ${p.status === 'Sudah Fitting' ? 'Tandai Menunggu' : 'Tandai Sudah Fitting'}
+        </button>
+        <button data-action="delete" data-id="${p.id}" class="w-10 h-10 flex items-center justify-center rounded-full border border-outline-variant text-error hover:bg-error-container/20 transition-colors">
+          <span class="material-symbols-outlined text-lg">delete</span>
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function loadProfiles() {
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles`);
+    const data = await res.json();
+    renderProfiles(data);
+  } catch (e) {
+    showToast('Gagal memuat data fitting', true);
+  }
+}
+
+document.getElementById('refresh-profiles').addEventListener('click', loadProfiles);
+
+document.getElementById('profiles-list').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+
+  if (btn.dataset.action === 'open-sketch') {
+    const profile = profilesCache.find(p => String(p.id) === String(id));
+    if (profile) openSketch(profile);
+    return;
+  }
+
+  if (btn.dataset.action === 'toggle-status') {
+    const newStatus = btn.dataset.status === 'Sudah Fitting' ? 'Menunggu Fitting' : 'Sudah Fitting';
+    try {
+      const res = await fetch(`${API_BASE}/api/profiles/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      showToast('Status diperbarui');
+      loadProfiles();
+    } catch {
+      showToast('Gagal memperbarui status', true);
+    }
+  }
+
+  if (btn.dataset.action === 'delete') {
+    if (!confirm('Hapus data ini?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/profiles/${id}`, { method: 'DELETE' });
+      if (!res.ok && res.status !== 204) throw new Error();
+      showToast('Data dihapus');
+      loadProfiles();
+    } catch {
+      showToast('Gagal menghapus data', true);
+    }
+  }
+});
+
+// ---------------- Sketsa & Virtual Fitting 2D ----------------
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function buildSketchSVG(profile) {
+  const cx = 160;
+  const shoulderY = 96, chestY = 150, waistY = 230, hipY = 260, kneeY = 400, ankleY = 500;
+  const headCy = 50, headR = 24, neckY = 76;
+  const handY = 350;
+
+  const shoulderCm = profile.shoulder || 45;
+  const chestCm = profile.chest || 100;
+  const waistCm = profile.waist || 85;
+
+  // Shoulder is a straight width measurement; chest/waist are circumferences,
+  // so convert them to an approximate front-view width before scaling to px.
+  const shoulderW = clamp(shoulderCm * 2.3, 90, 160);
+  const chestW = clamp((chestCm / 2.9) * 2.3, 70, 130);
+  const waistW = clamp((waistCm / 3.0) * 2.3, 55, 120);
+
+  const fitMult = profile.fit_type === 'Regular Fit' ? 1.42 : 1.22;
+  const shirtShoulderW = shoulderW * 1.05;
+  const shirtChestW = chestW * fitMult;
+  const shirtWaistW = waistW * fitMult;
+  const shirtHemW = shirtWaistW * 1.1;
+  const hemY = hipY + 20;
+
+  const sleeveEndY = profile.sleeve === 'Pendek' ? 205 : 345;
+  const sleeveEndHalfW = profile.sleeve === 'Pendek' ? 30 : 18;
+
+  const bodyPts = [
+    [cx - shoulderW * 0.3, neckY],
+    [cx - shoulderW / 2, shoulderY],
+    [cx - chestW / 2, chestY],
+    [cx - waistW / 2, waistY],
+    [cx - waistW * 0.58, hipY],
+    [cx - waistW * 0.30, kneeY],
+    [cx - waistW * 0.32, ankleY],
+    [cx - waistW * 0.44, ankleY + 14],
+    [cx - waistW * 0.12, ankleY + 14],
+    [cx - waistW * 0.08, kneeY],
+    [cx, hipY + 14],
+    [cx + waistW * 0.08, kneeY],
+    [cx + waistW * 0.12, ankleY + 14],
+    [cx + waistW * 0.44, ankleY + 14],
+    [cx + waistW * 0.32, ankleY],
+    [cx + waistW * 0.30, kneeY],
+    [cx + waistW * 0.58, hipY],
+    [cx + waistW / 2, waistY],
+    [cx + chestW / 2, chestY],
+    [cx + shoulderW / 2, shoulderY],
+    [cx + shoulderW * 0.3, neckY],
+  ];
+  const bodyPolyPoints = bodyPts.map(p => p.join(',')).join(' ');
+
+  function armPolygon(side) {
+    const s = side;
+    const shX = cx + s * shoulderW / 2;
+    const elbowX = cx + s * (shoulderW / 2 + 22);
+    const handX = cx + s * (shoulderW / 2 + 4);
+    const pts = [
+      [shX - s * 4, shoulderY + 2],
+      [elbowX, chestY + 30],
+      [handX, handY],
+      [handX - s * 20, handY],
+      [cx + s * (chestW / 2 - 6), chestY + 10],
+      [shX - s * 16, shoulderY + 8],
+    ];
+    return pts.map(p => p.join(',')).join(' ');
+  }
+
+  const shirtPts = [
+    [cx - shirtShoulderW * 0.22, neckY - 4],
+    [cx - shirtShoulderW / 2, shoulderY - 2],
+    [cx - shirtChestW / 2, chestY],
+    [cx - shirtWaistW / 2, waistY],
+    [cx - shirtHemW / 2, hemY],
+    [cx + shirtHemW / 2, hemY],
+    [cx + shirtWaistW / 2, waistY],
+    [cx + shirtChestW / 2, chestY],
+    [cx + shirtShoulderW / 2, shoulderY - 2],
+    [cx + shirtShoulderW * 0.22, neckY - 4],
+  ];
+  const shirtPolyPoints = shirtPts.map(p => p.join(',')).join(' ');
+
+  function sleevePolygon(side) {
+    const s = side;
+    const shX = cx + s * shirtShoulderW / 2;
+    const outEndX = cx + s * (shirtShoulderW / 2 + (sleeveEndHalfW * 0.6));
+    const inEndX = cx + s * (shirtShoulderW / 2 - sleeveEndHalfW);
+    const pts = [
+      [shX, shoulderY - 2],
+      [outEndX, sleeveEndY],
+      [inEndX, sleeveEndY],
+      [cx + s * (shirtChestW / 2 - 8), chestY + 6],
+    ];
+    return pts.map(p => p.join(',')).join(' ');
+  }
+
+  let collarSvg = '';
+  const neckTopY = neckY - 6, collarTipY = neckY + 22;
+  if (profile.collar === 'Mandarin') {
+    collarSvg = `<rect x="${cx - 22}" y="${neckTopY}" width="44" height="10" rx="4" fill="none" stroke="var(--c-primary)" stroke-width="2"/>`;
+  } else if (profile.collar === 'Button-Down') {
+    collarSvg = `
+      <path d="M ${cx - 30} ${neckTopY} L ${cx} ${collarTipY} L ${cx + 30} ${neckTopY}" fill="none" stroke="var(--c-primary)" stroke-width="2"/>
+      <circle cx="${cx - 22}" cy="${neckTopY + 10}" r="2" fill="var(--c-primary)"/>
+      <circle cx="${cx + 22}" cy="${neckTopY + 10}" r="2" fill="var(--c-primary)"/>`;
+  } else if (profile.collar === 'Spread') {
+    collarSvg = `<path d="M ${cx - 42} ${neckTopY - 2} L ${cx} ${collarTipY + 4} L ${cx + 42} ${neckTopY - 2}" fill="none" stroke="var(--c-primary)" stroke-width="2"/>`;
+  } else {
+    collarSvg = `<path d="M ${cx - 26} ${neckTopY} L ${cx} ${collarTipY} L ${cx + 26} ${neckTopY}" fill="none" stroke="var(--c-primary)" stroke-width="2"/>`;
+  }
+
+  const pocketSvg = profile.pocket === 'Satu Saku'
+    ? `<rect x="${cx - shirtChestW * 0.28 - 17}" y="${chestY + 26}" width="34" height="26" rx="2" fill="none" stroke="var(--c-primary)" stroke-width="1.5" stroke-dasharray="3,2"/>`
+    : '';
+
+  function callout(label, value, atX, atY, dir) {
+    const lx = atX + dir * 46;
+    return `
+      <line x1="${atX}" y1="${atY}" x2="${lx}" y2="${atY}" stroke="var(--c-primary)" stroke-width="1" stroke-dasharray="2,2" opacity="0.6"/>
+      <circle cx="${atX}" cy="${atY}" r="2.5" fill="var(--c-primary)"/>
+      <text x="${lx + (dir > 0 ? 4 : -4)}" y="${atY - 4}" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--c-on-surface-variant)" text-anchor="${dir > 0 ? 'start' : 'end'}">${label}</text>
+      <text x="${lx + (dir > 0 ? 4 : -4)}" y="${atY + 8}" font-family="JetBrains Mono, monospace" font-size="10" font-weight="600" fill="var(--c-primary)" text-anchor="${dir > 0 ? 'start' : 'end'}">${value ? value + ' cm' : '--'}</text>
+    `;
+  }
+
+  return `
+<svg viewBox="0 0 320 520" xmlns="http://www.w3.org/2000/svg" style="--c-primary:#8aebff;--c-primary-container:#22d3ee;--c-outline-variant:#3c494c;--c-on-surface-variant:#bbc9cd;--c-surface-variant:#2d3449;" width="320" height="520">
+  <circle cx="${cx}" cy="${headCy}" r="${headR}" fill="var(--c-surface-variant)" fill-opacity="0.5" stroke="var(--c-outline-variant)" stroke-width="1.5"/>
+  <polygon points="${bodyPolyPoints}" fill="var(--c-surface-variant)" fill-opacity="0.4" stroke="var(--c-outline-variant)" stroke-width="1.5"/>
+  <polygon points="${armPolygon(-1)}" fill="var(--c-surface-variant)" fill-opacity="0.4" stroke="var(--c-outline-variant)" stroke-width="1.5"/>
+  <polygon points="${armPolygon(1)}" fill="var(--c-surface-variant)" fill-opacity="0.4" stroke="var(--c-outline-variant)" stroke-width="1.5"/>
+
+  <polygon points="${sleevePolygon(-1)}" fill="var(--c-primary-container)" fill-opacity="0.14" stroke="var(--c-primary)" stroke-width="1.75"/>
+  <polygon points="${sleevePolygon(1)}" fill="var(--c-primary-container)" fill-opacity="0.14" stroke="var(--c-primary)" stroke-width="1.75"/>
+  <polygon points="${shirtPolyPoints}" fill="var(--c-primary-container)" fill-opacity="0.14" stroke="var(--c-primary)" stroke-width="1.75"/>
+  ${collarSvg}
+  ${pocketSvg}
+
+  ${callout('BAHU', profile.shoulder, cx - shirtShoulderW / 2, shoulderY, -1)}
+  ${callout('DADA', profile.chest, cx + shirtChestW / 2, chestY, 1)}
+  ${callout('PINGGANG', profile.waist, cx - shirtWaistW / 2, waistY, -1)}
+  ${profile.height ? `<text x="${cx}" y="508" font-family="JetBrains Mono, monospace" font-size="9" fill="var(--c-on-surface-variant)" text-anchor="middle">TINGGI: ${profile.height} cm</text>` : ''}
+</svg>`;
+}
+
+let currentSketchProfile = null;
+let sketchZoom = 1;
+
+function openSketch(profile) {
+  currentSketchProfile = profile;
+  sketchZoom = 1;
+  document.getElementById('sketch-title').textContent = profile.name;
+  const wrap = document.getElementById('sketch-svg-wrap');
+  wrap.innerHTML = buildSketchSVG(profile);
+  wrap.style.transform = 'scale(1)';
+  showFittingSubview('sketch');
+}
+
+document.getElementById('sketch-back').addEventListener('click', () => {
+  showFittingSubview('list');
+});
+
+document.getElementById('zoom-in').addEventListener('click', () => {
+  sketchZoom = clamp(sketchZoom + 0.2, 0.5, 2.5);
+  document.getElementById('sketch-svg-wrap').style.transform = `scale(${sketchZoom})`;
+});
+
+document.getElementById('zoom-out').addEventListener('click', () => {
+  sketchZoom = clamp(sketchZoom - 0.2, 0.5, 2.5);
+  document.getElementById('sketch-svg-wrap').style.transform = `scale(${sketchZoom})`;
+});
+
+document.getElementById('sketch-download').addEventListener('click', () => {
+  if (!currentSketchProfile) return;
+  const svgEl = document.querySelector('#sketch-svg-wrap svg');
+  const svgString = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 640;
+    canvas.height = 1040;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#171f33';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+
+    const link = document.createElement('a');
+    link.download = `${currentSketchProfile.name.replace(/[^a-z0-9]+/gi, '-')}-sketsa.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('Sketsa diunduh');
+  };
+  img.onerror = () => showToast('Gagal mengunduh sketsa', true);
+  img.src = url;
+});
+
+document.getElementById('save-desain-btn').addEventListener('click', async () => {
+  if (!currentSketchProfile) return;
+  const suggestedName = `${currentSketchProfile.name} (Copy)`;
+  const name = window.prompt('Simpan desain ini sebagai pesanan baru dengan nama:', suggestedName);
+  if (!name || !name.trim()) return;
+
+  const p = currentSketchProfile;
+  try {
+    const res = await fetch(`${API_BASE}/api/profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name.trim(),
+        fit_type: p.fit_type, sleeve: p.sleeve, pocket: p.pocket, collar: p.collar,
+        height: p.height, chest: p.chest, waist: p.waist, shoulder: p.shoulder,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Gagal menyimpan desain');
+    }
+    showToast('Desain disimpan sebagai pesanan baru');
+    showFittingSubview('list');
+    loadProfiles();
+  } catch (e) {
+    showToast(e.message, true);
+  }
+});
+
+// ---------------- Init ----------------
+loadSensor();
+</script>
+</body>
+</html>

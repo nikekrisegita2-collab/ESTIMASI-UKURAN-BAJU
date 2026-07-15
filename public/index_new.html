@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html class="light" lang="id">
+
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Estimasi Baju</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error": "#ffffff", "outline": "#727785", "surface-container-lowest": "#ffffff",
+                        "on-background": "#191c1e", "on-tertiary-fixed-variant": "#723600", "on-surface-variant": "#424754",
+                        "surface-container-low": "#f2f4f6", "on-secondary-fixed": "#0b1c30", "background": "#f7f9fb",
+                        "primary-fixed": "#d8e2ff", "outline-variant": "#c2c6d6", "surface-container-highest": "#e0e3e5",
+                        "secondary": "#505f76", "on-secondary-container": "#54647a", "on-secondary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb786", "on-tertiary-container": "#fffbff", "primary-fixed-dim": "#adc6ff",
+                        "surface-dim": "#d8dadc", "secondary-container": "#d0e1fb", "on-primary-fixed-variant": "#004395",
+                        "inverse-primary": "#adc6ff", "inverse-surface": "#2d3133", "surface-tint": "#005ac2",
+                        "on-tertiary": "#ffffff", "surface-variant": "#e0e3e5", "inverse-on-surface": "#eff1f3",
+                        "secondary-fixed": "#d3e4fe", "surface-container-high": "#e6e8ea", "error-container": "#ffdad6",
+                        "primary-container": "#2170e4", "error": "#ba1a1a", "on-tertiary-fixed": "#311400",
+                        "on-secondary-fixed-variant": "#38485d", "on-surface": "#191c1e", "surface-container": "#eceef0",
+                        "surface-bright": "#f7f9fb", "tertiary-container": "#b75b00", "on-error-container": "#93000a",
+                        "surface": "#f7f9fb", "secondary-fixed-dim": "#b7c8e1", "on-primary-container": "#fefcff",
+                        "on-primary": "#ffffff", "tertiary": "#924700", "tertiary-fixed": "#ffdcc6",
+                        "on-primary-fixed": "#001a42", "primary": "#0058be",
+                        "success": "#16a34a", "success-container": "#dcfce7"
+                    },
+                    borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+                    spacing: { "stack-gap": "0.75rem", "section-gap": "1.5rem", "gutter": "1rem", "container-margin": "1rem", "component-padding": "1rem" },
+                    fontFamily: { "headline-md": ["Inter"], "headline-lg": ["Inter"], "body-lg": ["Inter"], "headline-lg-mobile": ["Inter"], "numeric-data": ["Inter"], "label-md": ["Inter"], "body-sm": ["Inter"] },
+                    fontSize: {
+                        "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-lg-mobile": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "700" }],
+                        "numeric-data": ["18px", { lineHeight: "24px", letterSpacing: "0.02em", fontWeight: "500" }],
+                        "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .page { display: none; }
+        .page.active { display: block; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes toast-in { from { opacity: 0; transform: translate(-50%, 16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+        @keyframes toast-out { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, 16px); } }
+        #toast { animation: toast-in 0.25s ease-out; }
+        #toast.hiding { animation: toast-out 0.2s ease-in forwards; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .live-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface min-h-screen pb-24">
+
+    <!-- Header -->
+    <header
+        class="w-full top-0 fixed z-50 bg-white border-b border-outline-variant flex items-center justify-between px-gutter h-16 shadow-sm">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">straighten</span>
+            <h1 id="pageTitle" class="font-headline-md text-headline-md text-on-surface">Estimasi baju</h1>
+        </div>
+        <div class="flex items-center gap-2">
+            <button id="refreshSensorBtn"
+                class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+                title="Muat ulang data sensor">
+                <span id="refreshIcon" class="material-symbols-outlined text-on-surface-variant">refresh</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ===================== PAGE: PROFILE / INPUT ===================== -->
+    <main id="page-profile" class="page active pt-20 px-container-margin max-w-lg mx-auto">
+        <div class="bg-white border border-outline-variant rounded-xl shadow-sm p-6 flex flex-col gap-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-on-surface">Estimasi baju</h2>
+                <div id="sensorStatus" class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                    <span id="statusDot" class="w-2 h-2 rounded-full bg-gray-300"></span>
+                    <span id="statusText">Menunggu data...</span>
+                </div>
+            </div>
+
+            <form id="estimasiForm" class="flex flex-col gap-6" novalidate="">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-medium text-on-surface-variant">Nama pelanggan</label>
+                    <input id="inputNama"
+                        class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                        placeholder="cth. Budi Santoso" type="text">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-primary text-[16px]">fitness_center</span>
+                            Panjang bahu (cm)
+                        </label>
+                        <input id="inputBahu"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface bg-surface-container-low font-numeric-data text-numeric-data cursor-not-allowed"
+                            placeholder="--" type="text" readonly>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-primary text-[16px]">monitor_heart</span>
+                            Lingkar dada (cm)
+                        </label>
+                        <input id="inputDada"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface bg-surface-container-low font-numeric-data text-numeric-data cursor-not-allowed"
+                            placeholder="--" type="text" readonly>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-primary text-[16px]">straighten</span>
+                            Panjang badan (cm)
+                        </label>
+                        <input id="inputBadan"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface bg-surface-container-low font-numeric-data text-numeric-data cursor-not-allowed"
+                            placeholder="--" type="text" readonly>
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                            <span class="material-symbols-outlined text-primary text-[16px]">checkroom</span>
+                            Estimasi ukuran
+                        </label>
+                        <input id="inputUkuran"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface bg-surface-container-low font-numeric-data text-numeric-data font-bold cursor-not-allowed"
+                            placeholder="--" type="text" readonly>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-on-surface-variant" id="sensorUpdatedInfo">Data belum tersedia dari sensor</p>
+
+                <div class="flex justify-center py-4">
+                    <img alt="Measurement Guide" class="max-w-[280px] h-auto object-contain"
+                        src="https://lh3.googleusercontent.com/aida/AP1WRLsL9Y8tn2LFPhzkvfjLLngZnwcrv1RsiikoDGC1uQQeuiWn-CBeqx_pJwKA1gg-N7Fs7i1RWdT6BWRk7rwFQGB3KlQT3iR3-uHya5S7jZ3muL-6LY53KfBIPLOZ5EFB6Q6h1ubN96HXvuesnE0mPbqPqLpbTO3mNfPO8DMzrTql4bK1Rnu3pmOfzqGpvdLJ7HaeyLxsjjhR24f9oL9Byxc9-oQGat6yVpeDyEfqmL25J4fS1v_NEQDpOds">
+                </div>
+
+                <div class="flex items-center gap-3 pt-4 border-t border-outline-variant">
+                    <div class="flex-1">
+                        <label class="sr-only">Jumlah</label>
+                        <input id="inputJumlah"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                            placeholder="Jumlah (cth. 2)" type="number" min="1" step="1" value="1">
+                    </div>
+                    <button id="saveBtn" type="submit"
+                        class="flex items-center gap-2 border border-outline-variant rounded-lg px-6 py-2 bg-white hover:bg-surface-container-low transition-colors active:scale-95">
+                        <span class="material-symbols-outlined text-[20px]">save</span>
+                        <span id="saveBtnText" class="font-medium">Simpan</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- ===================== PAGE: HISTORY ===================== -->
+    <main id="page-history" class="page pt-20 max-w-md mx-auto px-6 py-2">
+        <h1 class="text-2xl font-bold text-[#202124] mb-6 mt-4">Riwayat estimasi</h1>
+
+        <div class="mb-6">
+            <input
+                class="w-full border border-gray-300 rounded-lg px-4 py-3 text-base focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none placeholder:text-gray-500"
+                id="searchInput" placeholder="Cari nama pelanggan" type="text">
+        </div>
+
+        <div class="flex flex-col gap-4" id="historyList"></div>
+
+        <div id="emptyState" class="hidden flex-col items-center justify-center text-center py-16 text-[#5f6368]">
+            <span class="material-symbols-outlined text-5xl mb-2 text-gray-300">inbox</span>
+            <p class="font-medium">Belum ada data</p>
+            <p class="text-sm">Simpan estimasi baru di halaman Profile</p>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast"
+        class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-[#191c1e] text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
+        <span id="toastIcon" class="material-symbols-outlined text-[18px]">check_circle</span>
+        <span id="toastText">Data tersimpan</span>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center bg-white py-3 border-t border-outline-variant z-50">
+        <a data-page="profile" class="nav-link flex flex-col items-center justify-center text-primary" href="#">
+            <span class="material-symbols-outlined">person</span>
+            <span class="text-[10px] font-bold uppercase tracking-tighter">Profile</span>
+        </a>
+        <a data-page="history"
+            class="nav-link flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+            href="#">
+            <span class="material-symbols-outlined">history</span>
+            <span class="text-[10px] font-bold uppercase tracking-tighter">History</span>
+        </a>
+    </nav>
+
+    <script>
+    // ===================== CONSTANTS =====================
+    const API_BASE = ''; // same origin
+
+    // ===================== STATE =====================
+    const sensorState = {
+        shoulder: null,
+        chest: null,
+        height: null,
+        size: null,
+        size_note: null,
+        device_id: null,
+        created_at: null,
+    };
+
+    // ===================== TOAST =====================
+    let toastTimer = null;
+    function showToast(message, isError = false) {
+        const el = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const text = document.getElementById('toastText');
+        text.textContent = message;
+        icon.textContent = isError ? 'error' : 'check_circle';
+        icon.style.color = isError ? '#ef4444' : '#4ade80';
+        el.classList.remove('hidden', 'hiding');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+            el.classList.add('hiding');
+            setTimeout(() => el.classList.add('hidden'), 200);
+        }, 2600);
+    }
+
+    // ===================== PAGE NAVIGATION =====================
+    const navLinks = document.querySelectorAll('.nav-link');
+    const pages = document.querySelectorAll('.page');
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = link.dataset.page;
+            navLinks.forEach(l => {
+                l.classList.toggle('text-primary', l.dataset.page === target);
+                l.classList.toggle('text-on-surface-variant', l.dataset.page !== target);
+            });
+            pages.forEach(p => {
+                p.classList.toggle('active', p.id === `page-${target}`);
+            });
+            if (target === 'history') loadHistory();
+        });
+    });
+
+    // ===================== SENSOR DATA (MQTT via SSE) =====================
+    function updateSensorUI(data) {
+        // Update state
+        sensorState.shoulder = data.shoulder;
+        sensorState.chest = data.chest;
+        sensorState.height = data.height;
+        sensorState.size = data.size;
+        sensorState.size_note = data.size_note;
+        sensorState.device_id = data.device_id;
+        sensorState.created_at = data.created_at;
+
+        // Update input fields
+        document.getElementById('inputBahu').value = data.shoulder ?? '--';
+        document.getElementById('inputDada').value = data.chest ?? '--';
+        document.getElementById('inputBadan').value = data.height ?? '--';
+        document.getElementById('inputUkuran').value = data.size ?? '--';
+
+        // Update status indicator
+        const dot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        dot.classList.remove('bg-gray-300');
+        dot.classList.add('bg-success', 'live-dot');
+        statusText.textContent = 'Data live';
+        statusText.classList.add('text-success');
+
+        // Spin refresh icon briefly
+        const icon = document.getElementById('refreshIcon');
+        icon.classList.add('spin');
+        setTimeout(() => icon.classList.remove('spin'), 500);
+
+        // Update info text
+        const t = new Date(data.created_at + 'Z');
+        const catatan = data.size_note ? ` • ${data.size_note}` : '';
+        document.getElementById('sensorUpdatedInfo').textContent =
+            `Perangkat: ${data.device_id} • Diperbarui ${t.toLocaleString('id-ID')}${catatan}`;
+    }
+
+    async function loadSensor() {
+        const icon = document.getElementById('refreshIcon');
+        icon.classList.add('spin');
+        try {
+            const res = await fetch(`${API_BASE}/api/sensor/latest`);
+            if (!res.ok) throw new Error('no-data');
+            const data = await res.json();
+            updateSensorUI(data);
+        } catch (e) {
+            document.getElementById('sensorUpdatedInfo').textContent = 'Belum ada data dari alat sensor.';
+        } finally {
+            icon.classList.remove('spin');
+        }
+    }
+
+    // SSE: Subscribe ke data real-time dari server
+    const sensorStream = new EventSource(`${API_BASE}/api/sensor/stream`);
+    sensorStream.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateSensorUI(data);
+    };
+
+    document.getElementById('refreshSensorBtn').addEventListener('click', loadSensor);
+
+    // ===================== SAVE PROFILE =====================
+    document.getElementById('estimasiForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nameInput = document.getElementById('inputNama');
+        const name = nameInput.value.trim();
+        if (!name) {
+            showToast('Isi nama pelanggan dulu ya', true);
+            nameInput.focus();
+            return;
+        }
+
+        const jumlah = parseInt(document.getElementById('inputJumlah').value) || 1;
+
+        const payload = {
+            name,
+            fit_type: 'Regular Fit',
+            sleeve: 'Panjang',
+            pocket: 'Tanpa Saku',
+            collar: 'Classic Point',
+            height: sensorState.height,
+            chest: sensorState.chest,
+            waist: null,
+            shoulder: sensorState.shoulder,
+            size: sensorState.size,
+            jumlah,
+        };
+
+        const saveBtnText = document.getElementById('saveBtnText');
+        saveBtnText.textContent = 'Menyimpan...';
+
+        try {
+            const res = await fetch(`${API_BASE}/api/profiles`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || 'Gagal menyimpan');
+            }
+            showToast('Data berhasil disimpan');
+            nameInput.value = '';
+        } catch (e) {
+            showToast(e.message, true);
+        } finally {
+            saveBtnText.textContent = 'Simpan';
+        }
+    });
+
+    // ===================== HISTORY =====================
+    let historyCache = [];
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function renderHistory(list) {
+        historyCache = list;
+        const container = document.getElementById('historyList');
+        const emptyState = document.getElementById('emptyState');
+        container.innerHTML = '';
+
+        if (!list.length) {
+            emptyState.classList.remove('hidden');
+            emptyState.classList.add('flex');
+            return;
+        }
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+
+        list.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col gap-3';
+
+            const t = p.created_at ? new Date(p.created_at + 'Z').toLocaleString('id-ID') : '';
+
+            card.innerHTML = `
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <p class="font-semibold text-on-surface">${escapeHtml(p.name)}</p>
+                        <p class="text-xs text-on-surface-variant mt-0.5">${t}</p>
+                    </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        p.status === 'Sudah Fitting'
+                            ? 'bg-success-container text-success'
+                            : 'bg-primary-fixed text-primary'
+                    }">${p.status || 'Menunggu Fitting'}</span>
+                </div>
+                <div class="grid grid-cols-4 gap-2 text-center border-t border-outline-variant pt-3">
+                    <div>
+                        <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Bahu</p>
+                        <p class="font-numeric-data text-numeric-data text-on-surface">${p.shoulder ?? '--'}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Dada</p>
+                        <p class="font-numeric-data text-numeric-data text-on-surface">${p.chest ?? '--'}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Badan</p>
+                        <p class="font-numeric-data text-numeric-data text-on-surface">${p.height ?? '--'}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Ukuran</p>
+                        <p class="font-numeric-data text-numeric-data text-on-surface font-bold">${p.size ?? '--'}</p>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button data-action="toggle-status" data-id="${p.id}" data-status="${p.status}"
+                        class="flex-1 text-sm font-medium py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors active:scale-95">
+                        ${p.status === 'Sudah Fitting' ? 'Tandai Menunggu' : 'Tandai Sudah Fitting'}
+                    </button>
+                    <button data-action="delete" data-id="${p.id}"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-error hover:bg-error-container/30 transition-colors active:scale-95">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    async function loadHistory() {
+        try {
+            const res = await fetch(`${API_BASE}/api/profiles`);
+            const data = await res.json();
+            renderHistory(data);
+        } catch (e) {
+            showToast('Gagal memuat riwayat', true);
+        }
+    }
+
+    // History card actions (toggle status & delete)
+    document.getElementById('historyList').addEventListener('click', async (e) => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+
+        if (btn.dataset.action === 'toggle-status') {
+            const newStatus = btn.dataset.status === 'Sudah Fitting' ? 'Menunggu Fitting' : 'Sudah Fitting';
+            try {
+                const res = await fetch(`${API_BASE}/api/profiles/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+                if (!res.ok) throw new Error();
+                showToast('Status diperbarui');
+                loadHistory();
+            } catch {
+                showToast('Gagal memperbarui status', true);
+            }
+        }
+
+        if (btn.dataset.action === 'delete') {
+            if (!confirm('Hapus data ini?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/profiles/${id}`, { method: 'DELETE' });
+                if (!res.ok && res.status !== 204) throw new Error();
+                showToast('Data dihapus');
+                loadHistory();
+            } catch {
+                showToast('Gagal menghapus data', true);
+            }
+        }
+    });
+
+    // Search filter
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = historyCache.filter(p => p.name.toLowerCase().includes(query));
+        renderHistory(filtered);
+    });
+
+    // ===================== INIT =====================
+    loadSensor();
+    </script>
+</body>
+
+</html>
