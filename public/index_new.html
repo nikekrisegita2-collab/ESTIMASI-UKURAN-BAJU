@@ -384,12 +384,16 @@
 
         list.forEach(p => {
             const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col gap-3';
+            card.className = 'bg-white rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col gap-3 relative';
 
             const t = p.created_at ? new Date(p.created_at + 'Z').toLocaleString('id-ID') : '';
 
             card.innerHTML = `
-                <div class="flex items-start justify-between gap-2">
+                <button data-action="delete" data-id="${p.id}"
+                    class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-error hover:bg-error-container/30 transition-colors active:scale-95">
+                    <span class="material-symbols-outlined text-lg">delete</span>
+                </button>
+                <div class="flex items-start justify-between gap-2 pr-12">
                     <div>
                         <p class="font-semibold text-on-surface">${escapeHtml(p.name)}</p>
                         <p class="text-xs text-on-surface-variant mt-0.5">${t}</p>
@@ -412,12 +416,6 @@
                         <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Ukuran</p>
                         <p class="font-numeric-data text-numeric-data text-on-surface font-bold">${p.size ?? '--'}</p>
                     </div>
-                </div>
-                <div class="flex gap-2">
-                    <button data-action="delete" data-id="${p.id}"
-                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-error hover:bg-error-container/30 transition-colors active:scale-95">
-                        <span class="material-symbols-outlined text-lg">delete</span>
-                    </button>
                 </div>
             `;
             container.appendChild(card);
