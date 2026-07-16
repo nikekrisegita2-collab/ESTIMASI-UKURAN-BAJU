@@ -286,6 +286,35 @@
             `Perangkat: ${data.device_id} • Diperbarui ${t.toLocaleString('id-ID')}${catatan}`;
     }
 
+    // Reset tampilan hasil pengukuran kembali ke "--" setelah data disimpan,
+    // sampai alat mengirim pengukuran baru lewat SSE.
+    function resetSensorUI() {
+        // Reset state
+        sensorState.shoulder = null;
+        sensorState.chest = null;
+        sensorState.height = null;
+        sensorState.size = null;
+        sensorState.size_note = null;
+        sensorState.device_id = null;
+        sensorState.created_at = null;
+
+        // Kosongkan input agar placeholder "--" yang tampil
+        document.getElementById('inputBahu').value = '';
+        document.getElementById('inputDada').value = '';
+        document.getElementById('inputBadan').value = '';
+        document.getElementById('inputUkuran').value = '';
+
+        // Kembalikan status indicator ke kondisi awal
+        const dot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        dot.classList.remove('bg-success', 'live-dot');
+        dot.classList.add('bg-gray-300');
+        statusText.textContent = 'Menunggu data...';
+        statusText.classList.remove('text-success');
+
+        document.getElementById('sensorUpdatedInfo').textContent = 'Data belum tersedia dari sensor';
+    }
+
     async function loadSensor() {
         const icon = document.getElementById('refreshIcon');
         icon.classList.add('spin');
@@ -352,6 +381,7 @@
             }
             showToast('Data berhasil disimpan');
             nameInput.value = '';
+            resetSensorUI(); // Reset tampilan hasil pengukuran ke "--" setelah simpan berhasil
         } catch (e) {
             showToast(e.message, true);
         } finally {
