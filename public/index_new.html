@@ -146,13 +146,7 @@
                         src="https://lh3.googleusercontent.com/aida/AP1WRLsL9Y8tn2LFPhzkvfjLLngZnwcrv1RsiikoDGC1uQQeuiWn-CBeqx_pJwKA1gg-N7Fs7i1RWdT6BWRk7rwFQGB3KlQT3iR3-uHya5S7jZ3muL-6LY53KfBIPLOZ5EFB6Q6h1ubN96HXvuesnE0mPbqPqLpbTO3mNfPO8DMzrTql4bK1Rnu3pmOfzqGpvdLJ7HaeyLxsjjhR24f9oL9Byxc9-oQGat6yVpeDyEfqmL25J4fS1v_NEQDpOds">
                 </div>
 
-                <div class="flex items-center gap-3 pt-4 border-t border-outline-variant">
-                    <div class="flex-1">
-                        <label class="sr-only">Jumlah</label>
-                        <input id="inputJumlah"
-                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none"
-                            placeholder="Jumlah (cth. 2)" type="number" min="1" step="1" value="1">
-                    </div>
+                <div class="flex items-center justify-center pt-4 border-t border-outline-variant">
                     <button id="saveBtn" type="submit"
                         class="flex items-center gap-2 border border-outline-variant rounded-lg px-6 py-2 bg-white hover:bg-surface-container-low transition-colors active:scale-95">
                         <span class="material-symbols-outlined text-[20px]">save</span>
@@ -327,7 +321,7 @@
             return;
         }
 
-        const jumlah = parseInt(document.getElementById('inputJumlah').value) || 1;
+        const jumlah = 1;
 
         const payload = {
             name,
