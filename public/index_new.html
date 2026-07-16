@@ -360,7 +360,11 @@
     });
 
     // ===================== HISTORY =====================
-    let historyCache = [];
+    // FIX: historyCache sekarang HANYA diisi ulang di loadHistory() (dari data server).
+    // Sebelumnya renderHistory() juga menimpa historyCache dengan hasil filter,
+    // sehingga pencarian kedua dan seterusnya memfilter dari data yang sudah menyusut,
+    // bukan dari data lengkap. Itu sebabnya list bisa hilang total sampai reload.
+    let historyCache = []; // menyimpan SEMUA data (sumber asli untuk difilter)
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -369,7 +373,7 @@
     }
 
     function renderHistory(list) {
-        historyCache = list;
+        // Catatan: fungsi ini HANYA menampilkan data, tidak lagi mengubah historyCache.
         const container = document.getElementById('historyList');
         const emptyState = document.getElementById('emptyState');
         container.innerHTML = '';
@@ -426,6 +430,7 @@
         try {
             const res = await fetch(`${API_BASE}/api/profiles`);
             const data = await res.json();
+            historyCache = data; // FIX: hanya di sini historyCache diisi ulang dengan data lengkap
             renderHistory(data);
         } catch (e) {
             showToast('Gagal memuat riwayat', true);
@@ -452,6 +457,7 @@
     });
 
     // Search filter
+    // FIX: selalu memfilter dari historyCache yang berisi data LENGKAP (tidak lagi ikut ditimpa oleh renderHistory)
     document.getElementById('searchInput').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = historyCache.filter(p => p.name.toLowerCase().includes(query));
