@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
         rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -60,6 +61,8 @@
         #toast.hiding { animation: toast-out 0.2s ease-in forwards; }
         @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         .live-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+        #plot3d { width: 100%; height: 100%; }
+        #plot3d .js-plotly-plot .plotly, #plot3d .plot-container { width: 100%; height: 100%; }
     </style>
 </head>
 
@@ -141,12 +144,24 @@
 
                 <p class="text-[11px] text-on-surface-variant" id="sensorUpdatedInfo">Data belum tersedia dari sensor</p>
 
+                <button type="button" id="viewSketch3DBtn"
+                    class="w-full flex items-center justify-center gap-2 border border-outline-variant rounded-lg px-4 py-2.5 bg-surface-container-low hover:bg-surface-container-high transition-colors active:scale-95 text-sm font-medium text-on-surface">
+                    <span class="material-symbols-outlined text-[18px] text-primary">view_in_ar</span>
+                    Lihat Sketsa 3D
+                </button>
+
                 <div class="flex justify-center py-4">
                     <img alt="Measurement Guide" class="max-w-[280px] h-auto object-contain"
-                        src="sketsa tubuh.png">
+                        src="https://lh3.googleusercontent.com/aida/AP1WRLsL9Y8tn2LFPhzkvfjLLngZnwcrv1RsiikoDGC1uQQeuiWn-CBeqx_pJwKA1gg-N7Fs7i1RWdT6BWRk7rwFQGB3KlQT3iR3-uHya5S7jZ3muL-6LY53KfBIPLOZ5EFB6Q6h1ubN96HXvuesnE0mPbqPqLpbTO3mNfPO8DMzrTql4bK1Rnu3pmOfzqGpvdLJ7HaeyLxsjjhR24f9oL9Byxc9-oQGat6yVpeDyEfqmL25J4fS1v_NEQDpOds">
                 </div>
 
-                <div class="flex items-center justify-center pt-4 border-t border-outline-variant">
+                <div class="flex items-center gap-3 pt-4 border-t border-outline-variant">
+                    <div class="flex-1">
+                        <label class="sr-only">Jumlah</label>
+                        <input id="inputJumlah"
+                            class="w-full border border-outline-variant rounded-lg px-3 py-2 text-on-surface focus:ring-1 focus:ring-primary focus:border-primary outline-none"
+                            placeholder="Jumlah (cth. 2)" type="number" min="1" step="1" value="1">
+                    </div>
                     <button id="saveBtn" type="submit"
                         class="flex items-center gap-2 border border-outline-variant rounded-lg px-6 py-2 bg-white hover:bg-surface-container-low transition-colors active:scale-95">
                         <span class="material-symbols-outlined text-[20px]">save</span>
@@ -176,6 +191,51 @@
         </div>
     </main>
 
+    <!-- ===================== PAGE: SKETSA 3D ===================== -->
+    <main id="page-sketch3d" class="page pt-20 px-container-margin max-w-lg mx-auto">
+        <div class="bg-white border border-outline-variant rounded-xl shadow-sm p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <button id="sketch3dBack" type="button"
+                        class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors text-on-surface">
+                        <span class="material-symbols-outlined">arrow_back</span>
+                    </button>
+                    <h2 id="sketch3dTitle" class="text-lg font-bold text-on-surface">Sketsa 3D</h2>
+                </div>
+                <button id="sketch3dDownload" type="button"
+                    class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors text-on-surface-variant"
+                    title="Unduh gambar">
+                    <span class="material-symbols-outlined">download</span>
+                </button>
+            </div>
+
+            <div id="sketch3dMeta" class="grid grid-cols-3 gap-2 text-center border-y border-outline-variant py-2">
+                <div>
+                    <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Bahu</p>
+                    <p id="sketch3dBahu" class="font-numeric-data text-numeric-data text-on-surface">--</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Dada</p>
+                    <p id="sketch3dDada" class="font-numeric-data text-numeric-data text-on-surface">--</p>
+                </div>
+                <div>
+                    <p class="text-[10px] font-medium text-on-surface-variant uppercase tracking-wide">Tinggi</p>
+                    <p id="sketch3dTinggi" class="font-numeric-data text-numeric-data text-on-surface">--</p>
+                </div>
+            </div>
+
+            <div class="relative w-full h-[60vh] rounded-lg border border-outline-variant bg-surface-container-low overflow-hidden">
+                <div id="plot3d"></div>
+                <div id="sketch3dEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-6 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">person_off</span>
+                    <p class="text-sm">Data ukuran belum lengkap, sketsa memakai nilai perkiraan.</p>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-center text-on-surface-variant">Seret untuk memutar &bull; scroll/pinch untuk zoom</p>
+        </div>
+    </main>
+
     <!-- Toast -->
     <div id="toast"
         class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-[#191c1e] text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
@@ -195,6 +255,12 @@
             href="#">
             <span class="material-symbols-outlined">history</span>
             <span class="text-[10px] font-bold uppercase tracking-tighter">History</span>
+        </a>
+        <a data-page="sketch3d"
+            class="nav-link flex flex-col items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+            href="#">
+            <span class="material-symbols-outlined">view_in_ar</span>
+            <span class="text-[10px] font-bold uppercase tracking-tighter">Sketsa 3D</span>
         </a>
     </nav>
 
@@ -234,20 +300,36 @@
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
 
+    const pageTitles = { profile: 'Estimasi baju', history: 'Riwayat estimasi', sketch3d: 'Sketsa 3D' };
+
+    function goToPage(target) {
+        navLinks.forEach(l => {
+            l.classList.toggle('text-primary', l.dataset.page === target);
+            l.classList.toggle('text-on-surface-variant', l.dataset.page !== target);
+        });
+        pages.forEach(p => {
+            p.classList.toggle('active', p.id === `page-${target}`);
+        });
+        const titleEl = document.getElementById('pageTitle');
+        if (titleEl && pageTitles[target]) titleEl.textContent = pageTitles[target];
+        if (target === 'history') loadHistory();
+        if (target === 'sketch3d') renderSketch3D({
+            name: 'Data Sensor Saat Ini',
+            shoulder: sensorState.shoulder,
+            chest: sensorState.chest,
+            height: sensorState.height,
+        });
+    }
+
     navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const target = link.dataset.page;
-            navLinks.forEach(l => {
-                l.classList.toggle('text-primary', l.dataset.page === target);
-                l.classList.toggle('text-on-surface-variant', l.dataset.page !== target);
-            });
-            pages.forEach(p => {
-                p.classList.toggle('active', p.id === `page-${target}`);
-            });
-            if (target === 'history') loadHistory();
+            goToPage(link.dataset.page);
         });
     });
+
+    document.getElementById('viewSketch3DBtn').addEventListener('click', () => goToPage('sketch3d'));
+    document.getElementById('sketch3dBack').addEventListener('click', () => goToPage('profile'));
 
     // ===================== SENSOR DATA (MQTT via SSE) =====================
     function updateSensorUI(data) {
@@ -286,35 +368,6 @@
             `Perangkat: ${data.device_id} • Diperbarui ${t.toLocaleString('id-ID')}${catatan}`;
     }
 
-    // Reset tampilan hasil pengukuran kembali ke "--" setelah data disimpan,
-    // sampai alat mengirim pengukuran baru lewat SSE.
-    function resetSensorUI() {
-        // Reset state
-        sensorState.shoulder = null;
-        sensorState.chest = null;
-        sensorState.height = null;
-        sensorState.size = null;
-        sensorState.size_note = null;
-        sensorState.device_id = null;
-        sensorState.created_at = null;
-
-        // Kosongkan input agar placeholder "--" yang tampil
-        document.getElementById('inputBahu').value = '';
-        document.getElementById('inputDada').value = '';
-        document.getElementById('inputBadan').value = '';
-        document.getElementById('inputUkuran').value = '';
-
-        // Kembalikan status indicator ke kondisi awal
-        const dot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        dot.classList.remove('bg-success', 'live-dot');
-        dot.classList.add('bg-gray-300');
-        statusText.textContent = 'Menunggu data...';
-        statusText.classList.remove('text-success');
-
-        document.getElementById('sensorUpdatedInfo').textContent = 'Data belum tersedia dari sensor';
-    }
-
     async function loadSensor() {
         const icon = document.getElementById('refreshIcon');
         icon.classList.add('spin');
@@ -350,7 +403,7 @@
             return;
         }
 
-        const jumlah = 1;
+        const jumlah = parseInt(document.getElementById('inputJumlah').value) || 1;
 
         const payload = {
             name,
@@ -381,7 +434,6 @@
             }
             showToast('Data berhasil disimpan');
             nameInput.value = '';
-            resetSensorUI(); // Reset tampilan hasil pengukuran ke "--" setelah simpan berhasil
         } catch (e) {
             showToast(e.message, true);
         } finally {
@@ -390,11 +442,7 @@
     });
 
     // ===================== HISTORY =====================
-    // FIX: historyCache sekarang HANYA diisi ulang di loadHistory() (dari data server).
-    // Sebelumnya renderHistory() juga menimpa historyCache dengan hasil filter,
-    // sehingga pencarian kedua dan seterusnya memfilter dari data yang sudah menyusut,
-    // bukan dari data lengkap. Itu sebabnya list bisa hilang total sampai reload.
-    let historyCache = []; // menyimpan SEMUA data (sumber asli untuk difilter)
+    let historyCache = [];
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -403,7 +451,7 @@
     }
 
     function renderHistory(list) {
-        // Catatan: fungsi ini HANYA menampilkan data, tidak lagi mengubah historyCache.
+        historyCache = list;
         const container = document.getElementById('historyList');
         const emptyState = document.getElementById('emptyState');
         container.innerHTML = '';
@@ -418,20 +466,21 @@
 
         list.forEach(p => {
             const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col gap-3 relative';
+            card.className = 'bg-white rounded-xl border border-outline-variant shadow-sm p-4 flex flex-col gap-3';
 
             const t = p.created_at ? new Date(p.created_at + 'Z').toLocaleString('id-ID') : '';
 
             card.innerHTML = `
-                <button data-action="delete" data-id="${p.id}"
-                    class="absolute top-3 right-3 w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-error hover:bg-error-container/30 transition-colors active:scale-95">
-                    <span class="material-symbols-outlined text-lg">delete</span>
-                </button>
-                <div class="flex items-start justify-between gap-2 pr-12">
+                <div class="flex items-start justify-between gap-2">
                     <div>
                         <p class="font-semibold text-on-surface">${escapeHtml(p.name)}</p>
                         <p class="text-xs text-on-surface-variant mt-0.5">${t}</p>
                     </div>
+                    <span class="text-xs px-2 py-0.5 rounded-full font-semibold ${
+                        p.status === 'Sudah Fitting'
+                            ? 'bg-success-container text-success'
+                            : 'bg-primary-fixed text-primary'
+                    }">${p.status || 'Menunggu Fitting'}</span>
                 </div>
                 <div class="grid grid-cols-4 gap-2 text-center border-t border-outline-variant pt-3">
                     <div>
@@ -451,6 +500,21 @@
                         <p class="font-numeric-data text-numeric-data text-on-surface font-bold">${p.size ?? '--'}</p>
                     </div>
                 </div>
+                <div class="flex gap-2">
+                    <button data-action="open-sketch3d" data-id="${p.id}"
+                        class="flex-1 text-sm font-medium py-2 rounded-lg border border-outline-variant text-primary hover:bg-surface-container-low transition-colors active:scale-95 flex items-center justify-center gap-1">
+                        <span class="material-symbols-outlined text-[16px]">view_in_ar</span>
+                        Sketsa 3D
+                    </button>
+                    <button data-action="toggle-status" data-id="${p.id}" data-status="${p.status}"
+                        class="flex-1 text-sm font-medium py-2 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors active:scale-95">
+                        ${p.status === 'Sudah Fitting' ? 'Tandai Menunggu' : 'Tandai Sudah Fitting'}
+                    </button>
+                    <button data-action="delete" data-id="${p.id}"
+                        class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant text-error hover:bg-error-container/30 transition-colors active:scale-95">
+                        <span class="material-symbols-outlined text-lg">delete</span>
+                    </button>
+                </div>
             `;
             container.appendChild(card);
         });
@@ -460,7 +524,6 @@
         try {
             const res = await fetch(`${API_BASE}/api/profiles`);
             const data = await res.json();
-            historyCache = data; // FIX: hanya di sini historyCache diisi ulang dengan data lengkap
             renderHistory(data);
         } catch (e) {
             showToast('Gagal memuat riwayat', true);
@@ -472,6 +535,29 @@
         const btn = e.target.closest('[data-action]');
         if (!btn) return;
         const id = btn.dataset.id;
+
+        if (btn.dataset.action === 'toggle-status') {
+            const newStatus = btn.dataset.status === 'Sudah Fitting' ? 'Menunggu Fitting' : 'Sudah Fitting';
+            try {
+                const res = await fetch(`${API_BASE}/api/profiles/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus }),
+                });
+                if (!res.ok) throw new Error();
+                showToast('Status diperbarui');
+                loadHistory();
+            } catch {
+                showToast('Gagal memperbarui status', true);
+            }
+        }
+
+        if (btn.dataset.action === 'open-sketch3d') {
+            const profile = historyCache.find(p => String(p.id) === String(id));
+            if (!profile) return;
+            goToPage('sketch3d');
+            renderSketch3D(profile);
+        }
 
         if (btn.dataset.action === 'delete') {
             if (!confirm('Hapus data ini?')) return;
@@ -487,11 +573,223 @@
     });
 
     // Search filter
-    // FIX: selalu memfilter dari historyCache yang berisi data LENGKAP (tidak lagi ikut ditimpa oleh renderHistory)
     document.getElementById('searchInput').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase();
         const filtered = historyCache.filter(p => p.name.toLowerCase().includes(query));
         renderHistory(filtered);
+    });
+
+    // ===================== SKETSA 3D (manekin adaptif) =====================
+    // Diadaptasi dari kode referensi Plotly milik user: interpolasi PCHIP
+    // dipakai apa adanya, hanya titik kontrol (kiri/kanan/tebal) yang di-skala
+    // ulang mengikuti ukuran bahu, lingkar dada, dan tinggi badan pelanggan,
+    // supaya manekin 3D "mengikuti bentuk" data masing-masing orang.
+
+    function pchipEndpoint(h0, h1, d0, d1) {
+        let d = ((2 * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
+        if (Math.sign(d) !== Math.sign(d0)) d = 0;
+        else if (Math.sign(d0) !== Math.sign(d1) && Math.abs(d) > 3 * Math.abs(d0)) d = 3 * d0;
+        return d;
+    }
+
+    function pchipSlopes(x, y) {
+        const n = x.length;
+        const h = [];
+        const delta = [];
+        for (let i = 0; i < n - 1; i++) {
+            h.push(x[i + 1] - x[i]);
+            delta.push((y[i + 1] - y[i]) / (x[i + 1] - x[i]));
+        }
+        const d = new Array(n).fill(0);
+        for (let i = 1; i < n - 1; i++) {
+            if (delta[i - 1] * delta[i] <= 0) {
+                d[i] = 0;
+            } else {
+                const w1 = 2 * h[i] + h[i - 1];
+                const w2 = h[i] + 2 * h[i - 1];
+                d[i] = (w1 + w2) / (w1 / delta[i - 1] + w2 / delta[i]);
+            }
+        }
+        d[0] = pchipEndpoint(h[0], h[1], delta[0], delta[1]);
+        d[n - 1] = pchipEndpoint(h[n - 2], h[n - 3], delta[n - 2], delta[n - 3]);
+        return d;
+    }
+
+    function pchipInterpolate(x, y, xs) {
+        const d = pchipSlopes(x, y);
+        const n = x.length;
+        return xs.map(xv => {
+            let i = 0;
+            while (i < n - 2 && xv > x[i + 1]) i++;
+            const h = x[i + 1] - x[i];
+            const t = (xv - x[i]) / h;
+            const t2 = t * t, t3 = t2 * t;
+            const h00 = 2 * t3 - 3 * t2 + 1;
+            const h10 = t3 - 2 * t2 + t;
+            const h01 = -2 * t3 + 3 * t2;
+            const h11 = t3 - t2;
+            return h00 * y[i] + h10 * h * d[i] + h01 * y[i + 1] + h11 * h * d[i + 1];
+        });
+    }
+
+    function linspace(a, b, n) {
+        const arr = [];
+        const step = (b - a) / (n - 1);
+        for (let i = 0; i < n; i++) arr.push(a + i * step);
+        return arr;
+    }
+
+    // Perkiraan keliling elips (Ramanujan) - dipakai untuk mengubah lingkar
+    // dada (cm, hasil sensor) menjadi faktor skala lebar & tebal tubuh.
+    function ellipsePerimeter(a, b) {
+        const h = Math.pow((a - b) / (a + b), 2);
+        return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
+    }
+
+    // ---- Bentuk dasar / template (dari kode referensi) ----
+    const REF_HEIGHT = 170; // tinggi referensi (cm)
+    const REF_TINGGI = [0, 45, 90, 105, 130, 145, 155, 170];
+    const REF_KIRI = [-11, -11, -20, -17, -19, -22, -7, 0];
+    const REF_KANAN = [11, 11, 20, 17, 19, 22, 7, 0];
+    const REF_TEBAL = [8, 9, 11, 13, 15, 14, 10, 5];
+    const REF_SHOULDER_WIDTH = REF_KANAN[5] - REF_KIRI[5]; // pada tinggi=145 -> 44 cm
+    const REF_CHEST_PERIMETER = ellipsePerimeter(REF_KANAN[4], REF_TEBAL[4]); // pada tinggi=130
+
+    function buildMannequinTraces(measurements) {
+        const height = measurements.height || REF_HEIGHT;
+        const chest = measurements.chest || REF_CHEST_PERIMETER; // lingkar dada (cm)
+        const shoulder = measurements.shoulder || REF_SHOULDER_WIDTH; // lebar bahu (cm)
+
+        const heightScale = height / REF_HEIGHT;
+        const shoulderScale = shoulder / REF_SHOULDER_WIDTH;
+        // Karena aspek rasio elips dada dipertahankan (a,b diskalakan sama
+        // faktor s), rumus Ramanujan bersifat homogen derajat 1, jadi
+        // faktor skala tinggal rasio keliling terukur vs referensi.
+        const chestScale = chest / REF_CHEST_PERIMETER;
+
+        // Bobot pengaruh "lebar bahu" di sekitar titik tinggi=145 (indeks 5),
+        // meluruh ke arah torso/pinggang yang mengikuti skala dada.
+        function shoulderWeight(t) {
+            const w = 1 - Math.abs(t - 145) / 40;
+            return Math.max(0, Math.min(1, w));
+        }
+
+        const tinggiScaled = REF_TINGGI.map(t => t * heightScale);
+        const kiriScaled = REF_TINGGI.map((t, i) => {
+            const w = shoulderWeight(t);
+            const s = chestScale * (1 - w) + shoulderScale * w;
+            return REF_KIRI[i] * s;
+        });
+        const kananScaled = REF_TINGGI.map((t, i) => {
+            const w = shoulderWeight(t);
+            const s = chestScale * (1 - w) + shoulderScale * w;
+            return REF_KANAN[i] * s;
+        });
+        const tebalScaled = REF_TEBAL.map(v => v * chestScale);
+
+        const zSmooth = linspace(0, tinggiScaled[tinggiScaled.length - 1], 120);
+        const kiriSmooth = pchipInterpolate(tinggiScaled, kiriScaled, zSmooth);
+        const kananSmooth = pchipInterpolate(tinggiScaled, kananScaled, zSmooth);
+        const tebalSmooth = pchipInterpolate(tinggiScaled, tebalScaled, zSmooth);
+
+        const theta = linspace(0, 2 * Math.PI, 80);
+        const X = [], Y = [], Z = [];
+        for (let i = 0; i < zSmooth.length; i++) {
+            const rowX = [], rowY = [], rowZ = [];
+            const radiusX = (kananSmooth[i] - kiriSmooth[i]) / 2;
+            const radiusY = tebalSmooth[i];
+            for (let j = 0; j < theta.length; j++) {
+                rowX.push(radiusX * Math.cos(theta[j]));
+                rowY.push(radiusY * Math.sin(theta[j]));
+                rowZ.push(zSmooth[i]);
+            }
+            X.push(rowX); Y.push(rowY); Z.push(rowZ);
+        }
+
+        const body = {
+            type: 'surface', x: X, y: Y, z: Z, opacity: 0.95,
+            colorscale: [[0, 'rgb(240,210,180)'], [1, 'rgb(220,180,150)']],
+            showscale: false,
+        };
+
+        // Kepala: radius mengikuti sedikit dari skala tinggi supaya proporsional
+        const r = 8 * Math.sqrt(heightScale);
+        const headTopZ = tinggiScaled[tinggiScaled.length - 1] + 8;
+        const headX = [], headY = [], headZ = [];
+        const phi = linspace(0, Math.PI, 40);
+        const theta2 = linspace(0, 2 * Math.PI, 40);
+        for (let i = 0; i < phi.length; i++) {
+            const rowX = [], rowY = [], rowZ = [];
+            for (let j = 0; j < theta2.length; j++) {
+                rowX.push(r * Math.sin(phi[i]) * Math.cos(theta2[j]));
+                rowY.push(r * Math.sin(phi[i]) * Math.sin(theta2[j]));
+                rowZ.push(r * Math.cos(phi[i]) + headTopZ);
+            }
+            headX.push(rowX); headY.push(rowY); headZ.push(rowZ);
+        }
+        const head = {
+            type: 'surface', x: headX, y: headY, z: headZ, opacity: 0.95,
+            colorscale: [[0, 'rgb(240,210,180)'], [1, 'rgb(220,180,150)']],
+            showscale: false,
+        };
+
+        return [body, head];
+    }
+
+    let sketch3dRendered = false;
+
+    function renderSketch3D(profile) {
+        const measurements = {
+            height: toNumberOrNullClient(profile.height),
+            chest: toNumberOrNullClient(profile.chest),
+            shoulder: toNumberOrNullClient(profile.shoulder),
+        };
+
+        document.getElementById('sketch3dTitle').textContent = profile.name || 'Sketsa 3D';
+        document.getElementById('sketch3dBahu').textContent = measurements.shoulder ? `${measurements.shoulder} cm` : '--';
+        document.getElementById('sketch3dDada').textContent = measurements.chest ? `${measurements.chest} cm` : '--';
+        document.getElementById('sketch3dTinggi').textContent = measurements.height ? `${measurements.height} cm` : '--';
+
+        const emptyEl = document.getElementById('sketch3dEmpty');
+        const hasData = measurements.height || measurements.chest || measurements.shoulder;
+        emptyEl.classList.toggle('hidden', !!hasData);
+
+        const traces = buildMannequinTraces(measurements);
+        const layout = {
+            scene: {
+                xaxis: { title: 'Lebar (cm)' },
+                yaxis: { title: 'Ketebalan (cm)' },
+                zaxis: { title: 'Tinggi (cm)' },
+                aspectratio: { x: 1, y: 0.8, z: 2.6 },
+                camera: { eye: { x: 1.8, y: 1.8, z: 0.8 } },
+            },
+            margin: { l: 0, r: 0, t: 0, b: 0 },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+        };
+
+        if (!sketch3dRendered) {
+            Plotly.newPlot('plot3d', traces, layout, { responsive: true });
+            sketch3dRendered = true;
+        } else {
+            Plotly.react('plot3d', traces, layout, { responsive: true });
+        }
+    }
+
+    function toNumberOrNullClient(v) {
+        const n = Number(v);
+        return v !== null && v !== undefined && v !== '' && !isNaN(n) ? n : null;
+    }
+
+    document.getElementById('sketch3dDownload').addEventListener('click', () => {
+        const el = document.getElementById('plot3d');
+        if (!el || !el.data) { showToast('Sketsa belum siap', true); return; }
+        Plotly.toImage(el, { format: 'png', width: 800, height: 900 }).then(url => {
+            const link = document.createElement('a');
+            link.download = 'sketsa-3d.png';
+            link.href = url;
+            link.click();
+            showToast('Sketsa diunduh');
+        }).catch(() => showToast('Gagal mengunduh sketsa', true));
     });
 
     // ===================== INIT =====================
