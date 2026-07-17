@@ -466,7 +466,6 @@
     }
 
     function renderHistory(list) {
-        historyCache = list;
         const container = document.getElementById('historyList');
         const emptyState = document.getElementById('emptyState');
         container.innerHTML = '';
@@ -530,6 +529,7 @@
         try {
             const res = await fetch(`${API_BASE}/api/profiles`);
             const data = await res.json();
+            historyCache = data;
             renderHistory(data);
         } catch (e) {
             showToast('Gagal memuat riwayat', true);
