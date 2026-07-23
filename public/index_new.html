@@ -213,7 +213,7 @@
                 </div>
             </div>
 
-            <div class="relative w-full h-[60vh] rounded-lg border border-outline-variant bg-surface-container-low overflow-hidden">
+            <div class="relative w-full h-[60vh] rounded-lg border border-outline-variant bg-white overflow-hidden">
                 <div id="plot3d"></div>
                 <div id="sketch3dEmpty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center px-6 text-on-surface-variant">
                     <span class="material-symbols-outlined text-4xl mb-2 text-gray-300">person_off</span>
@@ -563,12 +563,12 @@
         renderHistory(filtered);
     });
 
-    // ===================== SKETSA 3D (wireframe body scanner, abu-abu) =====================
-    // Diadaptasi persis dari kode referensi Plotly "Wireframe 3D Body Scanner"
-    // milik user (tube mesh per bagian tubuh + wireframe + overlay titik
-    // sensor). Titik kontrol tiap bagian tubuh (Z, CX, CY, HW, HD) diskalakan
-    // mengikuti tinggi badan, lingkar dada, dan lebar bahu pelanggan supaya
-    // bentuknya tetap mengikuti data masing-masing orang.
+    // ===================== SKETSA 3D (point cloud per bagian tubuh + anotasi) =====================
+    // Gaya render diadaptasi dari kode referensi "Visualisasi Sketsa Tubuh 3D"
+    // (scatter3d mode 'markers' per bagian tubuh + trace anotasi teks), namun
+    // titik koordinatnya tetap dihitung secara lokal di browser (bukan dari
+    // peladen FastAPI eksternal) menggunakan model antropometri yang sudah ada,
+    // supaya bentuknya tetap mengikuti data bahu/dada/tinggi pelanggan.
 
     function linspace(a, b, n) {
         const arr = [];
@@ -633,7 +633,7 @@
         return Math.PI * (a + b) * (1 + (3 * h) / (10 + Math.sqrt(4 - 3 * h)));
     }
 
-    const NT = 40;
+    const NT = 24; // titik keliling per bagian tubuh (untuk point cloud, tidak perlu sehalus surface)
 
     function tube(zn, cxn, cyn, hwn, hdn, nz, nt) {
         const zf = linspace(zn[0], zn[zn.length - 1], nz);
@@ -661,41 +661,7 @@
         return Math.max(6, Math.round(h / spacing));
     }
 
-    function wireLines(meshObj, rowStep = 1, colStep = 4) {
-        const { X, Y, Z, nz, nt } = meshObj;
-        const x = [], y = [], z = [];
-        for (let i = 0; i < nz; i += rowStep) {
-            for (let j = 0; j < nt; j++) { x.push(X[i][j]); y.push(Y[i][j]); z.push(Z[i][j]); }
-            x.push(X[i][0]); y.push(Y[i][0]); z.push(Z[i][0]);
-            x.push(null); y.push(null); z.push(null);
-        }
-        for (let j = 0; j < nt; j += colStep) {
-            for (let i = 0; i < nz; i++) { x.push(X[i][j]); y.push(Y[i][j]); z.push(Z[i][j]); }
-            x.push(null); y.push(null); z.push(null);
-        }
-        return { x, y, z };
-    }
-
-    function flattenSurface(meshObj) { return { x: meshObj.X, y: meshObj.Y, z: meshObj.Z }; }
-
-    function surfaceTrace(meshObj, fillColor, opacity) {
-        const s = flattenSurface(meshObj);
-        return {
-            type: 'surface', x: s.x, y: s.y, z: s.z,
-            colorscale: [[0, fillColor], [1, fillColor]],
-            showscale: false, opacity: opacity,
-            lighting: { ambient: 0.65, diffuse: 0.65, specular: 0.15, roughness: 0.85 },
-            lightposition: { x: 100, y: 200, z: 300 },
-            hoverinfo: 'skip',
-        };
-    }
-
-    function wireTrace(meshObj, edgeColor) {
-        const w = wireLines(meshObj, 1, 4);
-        return { type: 'scatter3d', mode: 'lines', x: w.x, y: w.y, z: w.z, line: { color: edgeColor, width: 1.4 }, hoverinfo: 'skip' };
-    }
-
-    // ---- Template anatomi dasar (dari kode referensi, satuan cm) ----
+    // ---- Template anatomi dasar (satuan cm) ----
     const negX = arr => arr.map(v => -v);
 
     const REF = {
@@ -742,10 +708,9 @@
         const shoulder = measurements.shoulder || REF_SHOULDER_WIDTH; // lebar bahu (cm)
 
         const heightScale = height / REF_HEIGHT_TOTAL;
-        const chestScale = chest / REF_CHEST_PERIMETER;   // girth torso/kaki/kaki
+        const chestScale = chest / REF_CHEST_PERIMETER;   // girth torso/kaki
         const shoulderScale = shoulder / REF_SHOULDER_WIDTH; // girth lengan & tangan
 
-        // kaki & telapak kaki: ikut skala dada (tidak ada data ukuran kaki tersendiri)
         const meshRFT = tube(scaleArr(REF.FT_Z, heightScale), scaleArr(REF.FT_CX, chestScale), scaleArr(REF.FT_CY, chestScale), scaleArr(REF.FT_HW, chestScale), scaleArr(REF.FT_HD, chestScale), 7, NT);
         const meshLFT = tube(scaleArr(REF.FT_Z, heightScale), negX(scaleArr(REF.FT_CX, chestScale)), scaleArr(REF.FT_CY, chestScale), scaleArr(REF.FT_HW, chestScale), scaleArr(REF.FT_HD, chestScale), 7, NT);
 
@@ -754,16 +719,13 @@
         const meshRLG = tube(LG_Z_S, scaleArr(REF.LG_CX, chestScale), scaleArr(REF.LG_CY, chestScale), scaleArr(REF.LG_HW, chestScale), scaleArr(REF.LG_HD, chestScale), nzLG, NT);
         const meshLLG = tube(LG_Z_S, negX(scaleArr(REF.LG_CX, chestScale)), scaleArr(REF.LG_CY, chestScale), scaleArr(REF.LG_HW, chestScale), scaleArr(REF.LG_HD, chestScale), nzLG, NT);
 
-        // torso: girth mengikuti lingkar dada
         const TK_Z_S = scaleArr(REF.TK_Z, heightScale);
         const meshTK = tube(TK_Z_S, scaleArr(REF.TK_CX, chestScale), scaleArr(REF.TK_CY, chestScale), scaleArr(REF.TK_HW, chestScale), scaleArr(REF.TK_HD, chestScale), nzProp(TK_Z_S), NT);
 
-        // kepala: hanya ikut skala tinggi (proporsional ringan), girth dijaga stabil
         const headScale = Math.sqrt(heightScale);
         const HD_Z_S = scaleArr(REF.HD_Z, heightScale);
         const meshHD = tube(HD_Z_S, scaleArr(REF.HD_CX, headScale), scaleArr(REF.HD_CY, headScale), scaleArr(REF.HD_HW, headScale), scaleArr(REF.HD_HD, headScale), nzProp(HD_Z_S, 1.2), NT);
 
-        // lengan & tangan: girth mengikuti lebar bahu
         const AR_Z_S = scaleArr(REF.AR_Z, heightScale);
         const nzAR = nzProp(AR_Z_S);
         const meshRAR = tube(AR_Z_S, scaleArr(REF.AR_CX, shoulderScale), scaleArr(REF.AR_CY, shoulderScale), scaleArr(REF.AR_HW, shoulderScale), scaleArr(REF.AR_HD, shoulderScale), nzAR, NT);
@@ -773,62 +735,79 @@
         const meshRHN = tube(HN_Z_S, scaleArr(REF.HN_CX, shoulderScale), scaleArr(REF.HN_CY, shoulderScale), scaleArr(REF.HN_HW, shoulderScale), scaleArr(REF.HN_HD, shoulderScale), 10, NT);
         const meshLHN = tube(HN_Z_S, negX(scaleArr(REF.HN_CX, shoulderScale)), scaleArr(REF.HN_CY, shoulderScale), scaleArr(REF.HN_HW, shoulderScale), scaleArr(REF.HN_HD, shoulderScale), 10, NT);
 
-        return { parts: [meshRFT, meshLFT, meshRLG, meshLLG, meshTK, meshHD, meshRAR, meshLAR, meshRHN, meshLHN], heightScale, chestScale };
+        return {
+            meshRFT, meshLFT, meshRLG, meshLLG, meshTK, meshHD, meshRAR, meshLAR, meshRHN, meshLHN,
+            heightScale, chestScale, shoulderScale,
+        };
+    }
+
+    // Meratakan grid 2D (X,Y,Z) dari satu atau beberapa mesh menjadi array titik 1D,
+    // persis seperti .flat() pada kode referensi untuk trace scatter3d.
+    function flattenMeshes(meshes) {
+        const x = [], y = [], z = [];
+        meshes.forEach(m => {
+            for (let i = 0; i < m.nz; i++) {
+                for (let j = 0; j < m.nt; j++) {
+                    x.push(m.X[i][j]); y.push(m.Y[i][j]); z.push(m.Z[i][j]);
+                }
+            }
+        });
+        return { x, y, z };
     }
 
     function buildSketch3DTraces(measurements) {
-        const { parts, heightScale, chestScale } = buildBodyMeshes(measurements);
+        const meshes = buildBodyMeshes(measurements);
+        const { heightScale } = meshes;
 
-        const traces = [];
-        for (const part of parts) {
-            traces.push(surfaceTrace(part, '#e8e8e8', 0.92));
-            traces.push(wireTrace(part, '#9a9a9a'));
-        }
+        // Kelompok "bagian_tubuh": tiap bagian jadi satu trace point cloud
+        // berwarna sendiri, sama seperti loop data.bagian_tubuh pada kode referensi.
+        const bagianTubuh = [
+            { nama: 'Kepala', meshes: [meshes.meshHD], color: '#e67e22' },
+            { nama: 'Badan', meshes: [meshes.meshTK], color: '#2c3e50' },
+            { nama: 'Tangan Kanan', meshes: [meshes.meshRAR, meshes.meshRHN], color: '#2980b9' },
+            { nama: 'Tangan Kiri', meshes: [meshes.meshLAR, meshes.meshLHN], color: '#27ae60' },
+            { nama: 'Kaki Kanan', meshes: [meshes.meshRLG, meshes.meshRFT], color: '#8e44ad' },
+            { nama: 'Kaki Kiri', meshes: [meshes.meshLLG, meshes.meshLFT], color: '#c0392b' },
+        ];
 
-        // Overlay hiasan garis scan (biru) & titik sensor (merah/oranye),
-        // diskalakan mengikuti heightScale & chestScale supaya tetap menempel di badan.
-        const JUMLAH_TITIK = 40;
-        const TINGGI_MAKS = REF_HEIGHT_TOTAL * heightScale * (170 / REF_HEIGHT_TOTAL);
-        const LEBAR_FRAME = 80.0 * chestScale;
+        const traces = bagianTubuh.map(bagian => {
+            const flat = flattenMeshes(bagian.meshes);
+            return {
+                x: flat.x,
+                y: flat.y,
+                z: flat.z,
+                type: 'scatter3d',
+                mode: 'markers',
+                marker: { size: 1.6, color: bagian.color, opacity: 0.8 },
+                name: bagian.nama,
+                hoverinfo: 'name',
+            };
+        });
 
-        const _ankX = [0, 2.5, 5, 8, 10.5, 14, 18, 22, 27, 32, 36, 40, 44, 47, 52, 58, 65, 72, 78, 83,
-            88, 92, 97, 102, 106, 110, 114, 118, 122, 126, 130, 134, 138, 142, 146, 150, 153.5, 156, 158, 160].map(v => v * heightScale);
-        const _ankY = [9.5, 8.8, 10, 9.2, 9.8, 12.5, 16, 17.5, 16.2, 14, 17, 19.5, 18, 15.5, 22, 25.5,
-            28, 29.5, 31, 35.5, 38.5, 37, 32, 29.5, 30.5, 32.5, 34, 36.5, 39, 41.5, 43.5,
-            44.5, 45.5, 47, 48.5, 47.5, 44, 38.5, 15, 13.5].map(v => v * chestScale);
+        // Trace anotasi (titik + teks) menandai bahu, dada, dan tinggi total,
+        // sama seperti traceAnotasi pada kode referensi.
+        const shoulderZ = REF.TK_Z[15] * heightScale;   // area bahu (torso terlebar)
+        const chestZ = REF.TK_Z[9] * heightScale;       // area dada
+        const headZ = REF_HEIGHT_TOTAL * heightScale;   // ujung kepala
 
-        const posisiZ = linspace(0, 170 * heightScale, JUMLAH_TITIK);
-        let lebar40 = pchipInterpolate(_ankX, _ankY, posisiZ).map(v => clipVal(v, 5 * chestScale, 76 * chestScale));
-        lebar40 = lebar40.map((v, i) => posisiZ[i] > 160 * heightScale ? 0 : v);
+        const traceAnotasi = {
+            x: [0, 0, 0],
+            y: [0, 0, 0],
+            z: [shoulderZ, chestZ, headZ],
+            mode: 'markers+text',
+            type: 'scatter3d',
+            text: [
+                `Bahu: ${measurements.shoulder ?? '--'} cm`,
+                `Dada: ${measurements.chest ?? '--'} cm`,
+                `Tinggi: ${measurements.height ?? '--'} cm`,
+            ],
+            textposition: 'middle right',
+            marker: { size: 6, color: '#e74c3c' },
+            textfont: { size: 13, color: '#2c3e50', family: 'Arial' },
+            name: 'Anotasi',
+        };
 
-        const _jl = lebar40.map(v => clipVal((LEBAR_FRAME - v) / 2, 1, 78 * chestScale));
-        const _jr = lebar40.map(v => clipVal((LEBAR_FRAME - v) / 2, 1, 78 * chestScale));
-        const lebarAktual = lebar40.map((v, i) => Math.round((LEBAR_FRAME - _jl[i] - _jr[i]) * 100) / 100);
-
-        const ringX = [], ringY = [], ringZ = [];
-        for (let i = 0; i < posisiZ.length; i++) {
-            if (i % 3 !== 0) continue;
-            const zi = posisiZ[i];
-            const w2 = lebarAktual[i] / 2.0;
-            if (w2 < 1) continue;
-            const ratio = zi <= 92 * heightScale ? 0.85 : (zi <= 158 * heightScale ? 0.68 : 0.88);
-            const d2 = w2 * ratio;
-            const t = linspace(0, 2 * Math.PI, 80);
-            for (const th of t) { ringX.push(w2 * Math.cos(th)); ringY.push(d2 * Math.sin(th)); ringZ.push(zi); }
-            ringX.push(null); ringY.push(null); ringZ.push(null);
-        }
-
-        const dotLX = [], dotLY = [], dotLZ = [], dotRX = [], dotRY = [], dotRZ = [];
-        for (let i = 0; i < posisiZ.length; i++) {
-            if (lebarAktual[i] < 2) continue;
-            dotLX.push(-lebarAktual[i] / 2); dotLY.push(0); dotLZ.push(posisiZ[i]);
-            dotRX.push(lebarAktual[i] / 2); dotRY.push(0); dotRZ.push(posisiZ[i]);
-        }
-
-        traces.push({ type: 'scatter3d', mode: 'lines', x: ringX, y: ringY, z: ringZ, line: { color: '#33aaff', width: 1.8 }, opacity: 0.55, hoverinfo: 'skip' });
-        traces.push({ type: 'scatter3d', mode: 'markers', x: dotLX, y: dotLY, z: dotLZ, marker: { color: '#ff3355', size: 2.8, opacity: 0.85 }, hoverinfo: 'skip' });
-        traces.push({ type: 'scatter3d', mode: 'markers', x: dotRX, y: dotRY, z: dotRZ, marker: { color: '#ffaa00', size: 2.8, opacity: 0.85 }, hoverinfo: 'skip' });
-
+        traces.push(traceAnotasi);
         return traces;
     }
 
@@ -852,18 +831,15 @@
 
         const traces = buildSketch3DTraces(measurements);
         const layout = {
-            paper_bgcolor: '#1a1a1a',
+            title: 'Model Antropometri 3D (Putar dengan Mouse)',
             scene: {
-                xaxis: { title: 'Lebar (cm)', color: '#ccc', gridcolor: '#444' },
-                yaxis: { title: 'Ketebalan (cm)', color: '#ccc', gridcolor: '#444' },
-                zaxis: { title: 'Tinggi (cm)', color: '#ccc', gridcolor: '#444' },
-                aspectmode: 'manual',
-                aspectratio: { x: 1, y: 0.67, z: 2.6 },
-                camera: { eye: { x: 2.0, y: 2.0, z: 0.6 } },
-                bgcolor: '#1a1a1a',
+                xaxis: { title: 'Lebar X (cm)' },
+                yaxis: { title: 'Kedalaman Y (cm)' },
+                zaxis: { title: 'Tinggi Z (cm)' },
+                aspectmode: 'data',
             },
-            margin: { l: 0, r: 0, t: 0, b: 0 },
-            showlegend: false,
+            margin: { t: 50, b: 0, l: 0, r: 0 },
+            showlegend: true,
         };
 
         if (!sketch3dRendered) {
